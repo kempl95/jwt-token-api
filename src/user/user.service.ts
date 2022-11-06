@@ -23,7 +23,7 @@ export class UserService {
   public async login(dto: UserDTO): Promise<UserDTO> {
     const resQuery = await this.userRepository.find({ where: { login: dto.login } });
     if (resQuery === null) {
-
+      throw new HttpException(`Have not found user ${dto.login}`, 401);
     }
 
 
