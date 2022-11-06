@@ -11,6 +11,9 @@ import { Repository } from 'typeorm';
 import { UserDTO } from './user.dto';
 import { Observable, from, mergeMap, throwIfEmpty, of, EMPTY } from 'rxjs';
 import { User } from '../models/user.model';
+import * as bcrypt from 'bcrypt';
+import * as jwt from 'jsonwebtoken';
+import { TokenDTO } from './token.dto';
 
 @Injectable()
 export class UserService {
@@ -20,49 +23,37 @@ export class UserService {
 
 
 
-  public async login(dto: UserDTO): Promise<UserDTO> {
-    const resQuery = await this.userRepository.find({ where: { login: dto.login } });
-    if (resQuery === null) {
-      throw new HttpException(`Have not found user ${dto.login}`, 401);
+  public async login(dto: UserDTO): Promise<TokenDTO> {
+    try {
+      const resQuery = await this.userRepository.findBy({ login: dto.login });
+      if (resQuery === null) throw new HttpException(`Invalid credentials. Have not found user ${dto.login}`, 406);
+
+      const userData = resQuery[0];
+
+      const isMatch = await bcrypt.compare(dto.password, userData.password);
+      if (!isMatch) throw new HttpException(`Invalid credentials. wrong password`, 406);
+      if (userData.email !== dto.email) throw new HttpException(`Invalid credentials. wrong email`, 406);
+
+      //creating a access token
+      const accessToken = jwt.sign({
+        username: userData.login,
+        email: userData.email
+      }, process.env.ACCESS_TOKEN_SECRET, {
+        expiresIn: '1h'
+      });
+      // Creating refresh token not that expiry of refresh
+      //token is greater than the access token
+
+      const refreshToken = jwt.sign({
+        username: userData.login,
+      }, process.env.REFRESH_TOKEN_SECRET, { expiresIn: '1h' });
+
+
+      return new TokenDTO(accessToken, refreshToken);
+
     }
-
-
-    //   if (dto.login === resQuery.login && password === resQuery.password) {
-    //
-    //   }
-    //     if (dto.login === userCredentials.username &&
-    //       password === userCredentials.password) {
-    //
-    //       //creating a access token
-    //       const accessToken = jwt.sign({
-    //         username: userCredentials.username,
-    //         email: userCredentials.email
-    //       }, process.env.ACCESS_TOKEN_SECRET, {
-    //         expiresIn: '10m'
-    //       });
-    //       // Creating refresh token not that expiry of refresh
-    //       //token is greater than the access token
-    //
-    //       const refreshToken = jwt.sign({
-    //         username: userCredentials.username,
-    //       }, process.env.REFRESH_TOKEN_SECRET, { expiresIn: '1d' });
-    //
-    //       // Assigning refresh token in http-only cookie
-    //       res.cookie('jwt', refreshToken, { httpOnly: true,
-    //         sameSite: 'None', secure: true,
-    //         maxAge: 24 * 60 * 60 * 1000 });
-    //       return res.json({ accessToken });
-    //     }
-    //   }
-    // }
-    //
-    //   // Checking if credentials match
-    //
-    //   else {
-    //     // Return unauthorized error if credentials don't match
-    //     return res.status(406).json({
-    //       message: 'Invalid credentials' });
-    //   }
-    return dto;
+    catch (e) {
+      throw new HttpException(e.message(), 400);
+    }
   }
 }

@@ -40,7 +40,7 @@ class ConfigService {
       password: this.getValue('POSTGRES_PASSWORD'),
       database: this.getValue('POSTGRES_DATABASE'),
 
-      entities: ['**/*.models{.ts,.js}'],
+      entities: [__dirname + '/../**/*.model.js'] ,
       migrationsRun: false,
 
       ssl: this.isProduction(),

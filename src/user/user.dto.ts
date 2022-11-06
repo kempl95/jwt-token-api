@@ -12,6 +12,11 @@ export class UserDTO implements Readonly<UserDTO> {
   @IsNotEmpty()
   password: string;
 
+  @ApiProperty({ required: true })
+  @IsString()
+  @IsNotEmpty()
+  email: string;
+
   constructor(partial: Partial<UserDTO>) {
     Object.assign(this, partial);
   }

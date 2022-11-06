@@ -19,6 +19,9 @@ export class User {
   @Column({ type: 'varchar', length: 300, nullable: false })
   password: string;
 
+  @Column({ type: 'varchar', length: 300, nullable: false })
+  email: string;
+
   constructor(partial: Partial<User>) {
     Object.assign(this, partial);
   }

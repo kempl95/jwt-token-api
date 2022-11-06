@@ -21,13 +21,13 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
     const ctx = host.switchToHttp();
 
-    const httpStatus =
-      exception instanceof ValidationException ? exception.status : HttpStatus.INTERNAL_SERVER_ERROR;
-      exception instanceof HttpException ? exception.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;
+    let httpStatus = 400;
+    if (exception instanceof ValidationException) httpStatus = exception.status;
+    if (exception instanceof HttpException) httpStatus = exception.getStatus();
 
-    const message =
-      exception instanceof ValidationException ? exception.message : 'Validation error';
-      exception instanceof HttpException ? exception.getResponse() : 'Server error';
+    let message = 'Server error';
+    if (exception instanceof ValidationException) message = exception.message;
+    if (exception instanceof HttpException) message = exception.getResponse().toString();
 
     const responseBody = {
       statusCode: httpStatus,
