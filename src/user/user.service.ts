@@ -4,7 +4,7 @@ import {
   Inject,
   Injectable,
   NotFoundException,
-  OnModuleInit,
+  OnModuleInit, Response,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -15,6 +15,7 @@ import * as jwt from 'jsonwebtoken';
 import { TokenDTO } from './token.dto';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
+import { FastifyReply } from 'fastify';
 
 @Injectable()
 export class UserService {
@@ -22,8 +23,9 @@ export class UserService {
     private readonly httpService: HttpService
   ) {}
 
-  public async login(dto: UserDTO): Promise<TokenDTO> {
+  public async login(dto: UserDTO, res: FastifyReply): Promise<TokenDTO> {
     try {
+      //ToDo: Later: Add access token to request in order to protect it
       const { data } = await firstValueFrom(
         this.httpService.get<UserDTO>(`${process.env.SERVER_APP_URL}:${process.env.SERVER_APP_PORT}/jwt/users/login/${dto.login}`).pipe(),
       );
@@ -37,7 +39,7 @@ export class UserService {
       //creating a access token
       const accessToken = jwt.sign({
         username: userData.login,
-        email: userData.email
+        email: userData.email,
       }, process.env.ACCESS_TOKEN_SECRET, {
         expiresIn: '1h'
       });
@@ -48,6 +50,10 @@ export class UserService {
         username: userData.login,
       }, process.env.REFRESH_TOKEN_SECRET, { expiresIn: '1h' });
 
+      // Assigning refresh token in http-only cookie
+      res.setCookie('jwt', refreshToken, { httpOnly: true,
+        sameSite: 'none', secure: true,
+        maxAge: 24 * 60 * 60 * 1000 });
 
       return new TokenDTO(accessToken, refreshToken);
 
