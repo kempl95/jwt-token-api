@@ -10,26 +10,26 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UserDTO } from './user.dto';
 import { Observable, from, mergeMap, throwIfEmpty, of, EMPTY } from 'rxjs';
-import { User } from '../models/user.model';
 import * as bcrypt from 'bcrypt';
 import * as jwt from 'jsonwebtoken';
 import { TokenDTO } from './token.dto';
+import { HttpService } from '@nestjs/axios';
+import { firstValueFrom } from 'rxjs';
 
 @Injectable()
 export class UserService {
   constructor(
-    @InjectRepository(User) private readonly userRepository: Repository<User>,
+    private readonly httpService: HttpService
   ) {}
-
-
 
   public async login(dto: UserDTO): Promise<TokenDTO> {
     try {
-      const resQuery = await this.userRepository.findBy({ login: dto.login });
-      if (resQuery === null) throw new HttpException(`Invalid credentials. Have not found user ${dto.login}`, 406);
+      const { data } = await firstValueFrom(
+        this.httpService.get<UserDTO>(`${process.env.SERVER_APP_URL}:${process.env.SERVER_APP_PORT}/jwt/users/login/${dto.login}`).pipe(),
+      );
 
-      const userData = resQuery[0];
-
+      if (data === null) throw new HttpException(`Invalid credentials. Have not found user ${dto.login}`, 406);
+      const userData = data;
       const isMatch = await bcrypt.compare(dto.password, userData.password);
       if (!isMatch) throw new HttpException(`Invalid credentials. wrong password`, 406);
       if (userData.email !== dto.email) throw new HttpException(`Invalid credentials. wrong email`, 406);
