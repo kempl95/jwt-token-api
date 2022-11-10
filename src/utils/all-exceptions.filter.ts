@@ -3,7 +3,7 @@ import {
   Catch,
   ExceptionFilter,
   HttpException,
-  HttpStatus,
+  HttpStatus, NotFoundException,
 } from '@nestjs/common';
 import { AbstractHttpAdapter } from '@nestjs/core';
 import { ValidationException } from './validation.exception';
@@ -22,12 +22,15 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const ctx = host.switchToHttp();
 
     let httpStatus = 400;
-    if (exception instanceof ValidationException) httpStatus = exception.status;
-    if (exception instanceof HttpException) httpStatus = exception.getStatus();
-
     let message = 'Server error';
-    if (exception instanceof ValidationException) message = exception.message;
-    if (exception instanceof HttpException) message = exception.getResponse().toString();
+    if (exception instanceof ValidationException) {
+      httpStatus = exception.status;
+      message = exception.message;
+    }
+    else if (exception instanceof HttpException) {
+      httpStatus = exception.getStatus();
+      message = exception.message;
+    }
 
     const responseBody = {
       statusCode: httpStatus,

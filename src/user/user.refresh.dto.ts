@@ -7,11 +7,6 @@ export class UserRefreshDTO {
   @IsNotEmpty({always: true , message: 'empty'})
   login: string;
 
-  @ApiProperty({ required: true })
-  @IsString()
-  @IsNotEmpty()
-  email: string;
-
   constructor(partial: Partial<UserRefreshDTO>) {
     Object.assign(this, partial);
   }
