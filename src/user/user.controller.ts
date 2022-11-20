@@ -1,14 +1,9 @@
 import {
   Body,
-  Controller,
-  Get,
-  HttpStatus,
-  Param,
-  ParseIntPipe,
-  Post,
-  UseFilters,
+  Controller, Get, Param, Post,
 } from '@nestjs/common';
 import { UserService } from './user.service';
+import { ValidationPipe } from '../utils/validation.pipe';
 import { UserDTO } from './user.dto';
 import { Observable } from 'rxjs';
 
@@ -16,8 +11,22 @@ import { Observable } from 'rxjs';
 export class UserController {
   constructor(private userService: UserService) {}
 
-  @Post('/login')
-  public async login(@Body() dto: UserDTO): Promise<UserDTO> {
-    return await this.userService.login(dto);
+  @Get()
+  public getAll(): Observable<UserDTO[]> {
+    return this.userService.findAll();
+  }
+
+  @Get('/login/:login')
+  getUserByLogin(
+    //ParseIntPipe - Конвейеры / Pipes - трансформация/валидация входных данных
+    @Param('login')
+      login: string,
+  ): Observable<UserDTO> {
+    return this.userService.findByLogin(login);
+  }
+
+  @Post()
+  public post(@Body(new ValidationPipe()) dto: UserDTO): Promise<Observable<UserDTO>> {
+    return this.userService.create(dto);
   }
 }

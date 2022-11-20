@@ -1,4 +1,5 @@
-import { Entity, Column } from 'typeorm';
+import { Entity, Column, BeforeInsert } from 'typeorm';
+import * as bcrypt from 'bcrypt';
 
 @Entity({ name: 'user' })
 export class User {
@@ -18,6 +19,9 @@ export class User {
 
   @Column({ type: 'varchar', length: 300, nullable: false })
   password: string;
+
+  @Column({ type: 'varchar', length: 300, nullable: true })
+  email: string;
 
   constructor(partial: Partial<User>) {
     Object.assign(this, partial);
